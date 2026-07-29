@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment variables (keep secrets out of git)
+.env
+
+# macOS
+.DS_Store
+
+# Data — raw downloads and processed files are too large for git
+data/raw/
+data/processed/
+data/embeddings/
+
+# MLflow experiment tracking
+mlruns/
+mlflow.db
+
+# Trained models
+models/*.joblib
+models/*.pkl
+models/*.pt
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Qdrant local storage
+qdrant_storage/
+
+# pytest
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
