@@ -1,0 +1,24 @@
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+# E = pycodestyle errors, F = pyflakes (unused imports etc), W = warnings
+select = ["E", "F", "W"]
+ignore = [
+    "E501",  # line too long — we have long docstrings and SQL strings
+    "F841",  # local variable assigned but never used — common in notebooks/scripts
+]
+# Don't lint Jupyter notebooks (ruff can, but they're exploratory by nature)
+exclude = ["notebooks/"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts   = "-v --tb=short"
+# By default pytest exits with code 5 if no tests are collected.
+# This flag treats that as a pass so new repos don't fail CI before tests exist.
+# Remove this once we have real tests in every module.
+# (We already have real tests below, but this is good defensive practice.)
+
+[tool.ruff.lint.per-file-ignores]
+# Scripts that use sys.path manipulation at the top are a known pattern
+"scripts/*" = ["E402"]   # module level import not at top of file
