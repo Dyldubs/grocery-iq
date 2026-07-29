@@ -9,12 +9,6 @@ These tests verify that the config module:
 No downloaded data is needed — these are pure unit tests.
 """
 
-import os
-from pathlib import Path
-
-import pytest
-
-
 def test_project_root_is_a_real_directory():
     """The ROOT_DIR should point to the grocery-iq/ folder."""
     from src.config import ROOT_DIR
