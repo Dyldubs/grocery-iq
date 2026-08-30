@@ -39,6 +39,14 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 logger = logging.getLogger(__name__)
 
 
+def write_parquet(df: pd.DataFrame, path: Path) -> None:
+    """Write a cleaned frame to Parquet with zstd compression and log rows + size."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    df.to_parquet(path, index=False, compression="zstd")
+    size_mb = path.stat().st_size / 1e6
+    logger.info(f"  \u2713 wrote {path.name}: {len(df):,} rows, {size_mb:,.1f} MB")
+
+
 # ── Instacart ─────────────────────────────────────────────────────────────────
 
 def preprocess_instacart() -> None:
@@ -59,7 +67,7 @@ def preprocess_instacart() -> None:
     orders["order_hour_of_day"] = orders["order_hour_of_day"].astype("int8")
     # days_since_prior_order is NaN for a user's first-ever order — that's fine
     logger.info(f"  Orders: {len(orders):,} rows")
-    orders.to_parquet(ORDERS_PATH, index=False)
+    write_parquet(orders, ORDERS_PATH)
 
     # ── Products ──────────────────────────────────────────────────────────────
     # Join products with their aisle and department names
@@ -73,7 +81,7 @@ def preprocess_instacart() -> None:
         .merge(departments, on="department_id")
     )
     logger.info(f"  Products: {len(products):,} rows")
-    products.to_parquet(PRODUCTS_PATH, index=False)
+    write_parquet(products, PRODUCTS_PATH)
 
     # ── Order items ───────────────────────────────────────────────────────────
     # The Instacart dataset splits order items across three CSV files
@@ -91,7 +99,7 @@ def preprocess_instacart() -> None:
     order_items["reordered"]      = order_items["reordered"].astype("int8")
     order_items["add_to_cart_order"] = order_items["add_to_cart_order"].astype("int16")
     logger.info(f"  Order items total: {len(order_items):,} rows")
-    order_items.to_parquet(ORDER_ITEMS_PATH, index=False)
+    write_parquet(order_items, ORDER_ITEMS_PATH)
 
     logger.info("  ✓ Instacart → Parquet complete")
 
@@ -144,7 +152,7 @@ def preprocess_m5() -> None:
     df_long = df_long[df_long["sales"] > 0].reset_index(drop=True)
 
     logger.info(f"  M5 long format: {len(df_long):,} non-zero rows")
-    df_long.to_parquet(M5_SALES_PATH, index=False)
+    write_parquet(df_long, M5_SALES_PATH)
     logger.info("  ✓ M5 → Parquet complete")
 
 
@@ -209,7 +217,7 @@ def preprocess_open_food_facts() -> None:
     df = df[mask_au].reset_index(drop=True)
 
     logger.info(f"  After filtering: {len(df):,} products")
-    df.to_parquet(OFF_PRODUCTS_PATH, index=False)
+    write_parquet(df, OFF_PRODUCTS_PATH)
     logger.info("  ✓ Open Food Facts → Parquet complete")
 
 
