@@ -51,11 +51,14 @@ KMeans customer segments          Own-price & cross-price elasticity
 
 ## Datasets
 
-| Dataset | Size | Purpose |
-|---|---|---|
-| [Instacart Market Basket](https://www.kaggle.com/c/instacart-market-basket-analysis) | ~200 MB | Customer segmentation, reorder classifier |
-| [M5 Forecasting](https://www.kaggle.com/c/m5-forecasting-accuracy) | ~130 MB | Demand forecasting |
-| [Open Food Facts](https://world.openfoodfacts.org/data) | ~1 GB | RAG product knowledge base |
+| Dataset | Size | Purpose | Downloaded | Licence |
+|---|---|---|---|---|
+| [Instacart Market Basket](https://www.kaggle.com/c/instacart-market-basket-analysis) | ~200 MB | Customer segmentation, reorder classifier | 2026-08-01 | Instacart non-commercial data licence, attribution required (confirm exact terms on the source page) |
+| [M5 Forecasting](https://www.kaggle.com/c/m5-forecasting-accuracy) | ~130 MB | Demand forecasting | 2026-08-01 | Subject to the Kaggle competition rules (confirm before any commercial use) |
+| [Open Food Facts](https://world.openfoodfacts.org/data) | ~1 GB | RAG product knowledge base | 2026-08-01 | Database under Open Database License (ODbL) v1.0; product images under CC BY-SA |
+
+<!-- BEGIN DATA SCHEMA -->
+<!-- END DATA SCHEMA -->
 
 ---
 
