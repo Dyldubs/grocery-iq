@@ -160,65 +160,64 @@ def preprocess_m5() -> None:
 
 def preprocess_open_food_facts() -> None:
     """
-    Extract the useful columns from the Open Food Facts CSV and clean them
-    for use as a RAG knowledge base.
+    Extract the useful columns from the Open Food Facts export for the RAG
+    knowledge base.
 
-    Open Food Facts has ~185 columns per product — most are empty.
-    We keep the columns that matter for product search and recommendation.
+    The export is ~9 GB uncompressed across 211 columns, which is too large to
+    load into pandas on a laptop (that read swaps for hours). We stream it with
+    DuckDB, which reads the gzipped TSV, keeps only the columns and rows we need,
+    and writes Parquet directly with bounded memory. Usually a few minutes.
     """
-    logger.info("Processing Open Food Facts…")
+    logger.info("Processing Open Food Facts...")
 
     gz_file = OFF_DIR / "products.csv.gz"
     if not gz_file.exists():
-        logger.warning(f"  {gz_file} not found — skipping Open Food Facts")
+        logger.warning(f"  {gz_file} not found, skipping Open Food Facts")
         return
 
-    # Only load the columns we actually need — much faster than loading all 185
-    cols = [
-        "code",                   # barcode
-        "product_name",
-        "brands",
-        "categories_en",
-        "countries_en",
-        "ingredients_text",
-        "nutriments",             # JSON-like string of nutritional values
-        "energy-kcal_100g",
-        "fat_100g",
-        "carbohydrates_100g",
-        "proteins_100g",
-        "fiber_100g",
-        "sugars_100g",
-        "salt_100g",
-        "nova_group",             # food processing level (1=unprocessed, 4=ultra-processed)
-        "nutriscore_grade",       # A–E health rating
-        "main_category_en",
-    ]
+    import duckdb
 
-    logger.info("  Reading Open Food Facts (this may take 1–2 minutes)…")
-    df = pd.read_csv(
-        gz_file,
-        sep="\t",                 # OFF uses tab-separated values, not comma
-        usecols=[c for c in cols if c != "nutriments"],
-        low_memory=False,
-        on_bad_lines="skip",      # some rows have encoding issues
+    con = duckdb.connect()
+    con.execute("PRAGMA memory_limit='2GB'")
+
+    read = (
+        f"read_csv_auto('{gz_file.as_posix()}', all_varchar=true, "
+        f"ignore_errors=true, quote='')"
     )
+    out_path = OFF_PRODUCTS_PATH.as_posix()
 
-    logger.info(f"  Raw: {len(df):,} products")
+    logger.info("  Streaming Open Food Facts with DuckDB (a few minutes)...")
+    con.execute(f"""
+        COPY (
+            SELECT
+                code,
+                product_name,
+                brands,
+                categories_en,
+                countries_en,
+                ingredients_text,
+                TRY_CAST("energy-kcal_100g" AS DOUBLE) AS "energy-kcal_100g",
+                TRY_CAST(fat_100g AS DOUBLE)           AS fat_100g,
+                TRY_CAST(carbohydrates_100g AS DOUBLE) AS carbohydrates_100g,
+                TRY_CAST(proteins_100g AS DOUBLE)      AS proteins_100g,
+                TRY_CAST(fiber_100g AS DOUBLE)         AS fiber_100g,
+                TRY_CAST(sugars_100g AS DOUBLE)        AS sugars_100g,
+                TRY_CAST(salt_100g AS DOUBLE)          AS salt_100g,
+                TRY_CAST(nova_group AS INTEGER)        AS nova_group,
+                nutriscore_grade,
+                main_category_en
+            FROM {read}
+            WHERE product_name  IS NOT NULL
+              AND categories_en IS NOT NULL
+              AND (countries_en IS NULL OR lower(countries_en) LIKE '%australia%')
+        ) TO '{out_path}' (FORMAT parquet, COMPRESSION zstd)
+    """)
 
-    # Filter to products with at least a name and category
-    df = df[df["product_name"].notna() & df["categories_en"].notna()]
-
-    # Restrict to products available in Australia or with no country listed
-    # (WiQ is Woolworths Australia — keep it relevant)
-    mask_au = (
-        df["countries_en"].isna()
-        | df["countries_en"].str.contains("Australia", na=False, case=False)
-    )
-    df = df[mask_au].reset_index(drop=True)
-
-    logger.info(f"  After filtering: {len(df):,} products")
-    write_parquet(df, OFF_PRODUCTS_PATH)
-    logger.info("  ✓ Open Food Facts → Parquet complete")
+    kept = con.execute(f"SELECT count(*) FROM '{out_path}'").fetchone()[0]
+    size_mb = OFF_PRODUCTS_PATH.stat().st_size / 1e6
+    con.close()
+    logger.info(f"  wrote {OFF_PRODUCTS_PATH.name}: {kept:,} rows, {size_mb:,.1f} MB")
+    logger.info("  Open Food Facts -> Parquet complete")
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
