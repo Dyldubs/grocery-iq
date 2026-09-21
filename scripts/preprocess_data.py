@@ -167,6 +167,10 @@ def preprocess_open_food_facts() -> None:
     load into pandas on a laptop (that read swaps for hours). We stream it with
     DuckDB, which reads the gzipped TSV, keeps only the columns and rows we need,
     and writes Parquet directly with bounded memory. Usually a few minutes.
+
+    Blank text fields are normalised to NULL (NULLIF) so "missing" is consistent
+    across text and numeric columns, and a product with no country listed counts
+    as available (matching the original intent).
     """
     logger.info("Processing Open Food Facts...")
 
@@ -190,12 +194,12 @@ def preprocess_open_food_facts() -> None:
     con.execute(f"""
         COPY (
             SELECT
-                code,
-                product_name,
-                brands,
-                categories_en,
-                countries_en,
-                ingredients_text,
+                NULLIF(code, '')             AS code,
+                NULLIF(product_name, '')     AS product_name,
+                NULLIF(brands, '')           AS brands,
+                NULLIF(categories_en, '')    AS categories_en,
+                NULLIF(countries_en, '')     AS countries_en,
+                NULLIF(ingredients_text, '') AS ingredients_text,
                 TRY_CAST("energy-kcal_100g" AS DOUBLE) AS "energy-kcal_100g",
                 TRY_CAST(fat_100g AS DOUBLE)           AS fat_100g,
                 TRY_CAST(carbohydrates_100g AS DOUBLE) AS carbohydrates_100g,
@@ -204,12 +208,12 @@ def preprocess_open_food_facts() -> None:
                 TRY_CAST(sugars_100g AS DOUBLE)        AS sugars_100g,
                 TRY_CAST(salt_100g AS DOUBLE)          AS salt_100g,
                 TRY_CAST(nova_group AS INTEGER)        AS nova_group,
-                nutriscore_grade,
-                main_category_en
+                NULLIF(NULLIF(nutriscore_grade, ''), 'unknown')  AS nutriscore_grade,
+                NULLIF(main_category_en, '')  AS main_category_en
             FROM {read}
-            WHERE product_name  IS NOT NULL
-              AND categories_en IS NOT NULL
-              AND (countries_en IS NULL OR lower(countries_en) LIKE '%australia%')
+            WHERE NULLIF(product_name, '')  IS NOT NULL
+              AND NULLIF(categories_en, '') IS NOT NULL
+              AND (NULLIF(countries_en, '') IS NULL OR lower(countries_en) LIKE '%australia%')
         ) TO '{out_path}' (FORMAT parquet, COMPRESSION zstd)
     """)
 
