@@ -231,13 +231,12 @@ grocery-iq/
 
 ## Model results
 
-Demand forecasting on the M5 data, scored on the 28-day validation window (days 1914 to 1941):
-
-| Model | Scope | WRMSSE | RMSE |
+| Model | Dataset and scope | Headline metric | Secondary |
 |---|---|---|---|
-| XGBoost (tweedie) | store CA_1, 3,049 series | 0.5441 | 2.2443 |
+| Demand forecast, XGBoost (tweedie) | M5, store CA_1 (3,049 series), 28-day validation | WRMSSE 0.5441 | RMSE 2.2443 |
+| Reorder classifier, XGBoost | Instacart, all train users (8.5M candidates) | PR AUC 0.4060 | ROC AUC 0.8302 |
 
-WRMSSE is the M5 competition metric: each series' RMSSE scaled by its own training-period naive error, dollar-weighted within each of the 12 aggregation levels and averaged. Lower is better; below 1.0 beats a naive last-value forecast, which scores about 0.83 on this data. The model uses 32 engineered features (sales lags, rolling statistics, calendar/event/SNAP flags, and price) with early stopping, tracked in MLflow. Training across all 10 stores is the next scale-up.
+WRMSSE is the M5 competition metric: each series' RMSSE scaled by its own training-period naive error, dollar-weighted within each of the 12 aggregation levels and averaged. Below 1.0 beats a naive last-value forecast, which scores about 0.83 on this data. The reorder classifier predicts whether a user reorders a previously bought product in their next order; at a 9.7% base reorder rate, a PR AUC of 0.41 is roughly four times the no-skill baseline, with ROC AUC 0.83. Both models are tracked in MLflow.
 
 ---
 
