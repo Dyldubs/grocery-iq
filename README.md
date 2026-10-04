@@ -235,8 +235,10 @@ grocery-iq/
 |---|---|---|---|
 | Demand forecast, XGBoost (tweedie) | M5, store CA_1 (3,049 series), 28-day validation | WRMSSE 0.5441 | RMSE 2.2443 |
 | Reorder classifier, XGBoost | Instacart, all train users (8.5M candidates) | PR AUC 0.4060 | ROC AUC 0.8302 |
+| Customer segmentation, KMeans (RFM-style) | Instacart, 206,209 users, k=4 | Silhouette 0.261 | 4 interpretable segments |
+| Price elasticity, log-log OLS (within-item FE) | M5, all stores, 5.11M item-store-week rows | FOODS -0.72 | HOBBIES -0.62, HOUSEHOLD -0.46 |
 
-WRMSSE is the M5 competition metric: each series' RMSSE scaled by its own training-period naive error, dollar-weighted within each of the 12 aggregation levels and averaged. Below 1.0 beats a naive last-value forecast, which scores about 0.83 on this data. The reorder classifier predicts whether a user reorders a previously bought product in their next order; at a 9.7% base reorder rate, a PR AUC of 0.41 is roughly four times the no-skill baseline, with ROC AUC 0.83. Both models are tracked in MLflow.
+WRMSSE is the M5 competition metric: each series' RMSSE scaled by its own training-period naive error, dollar-weighted within each of the 12 aggregation levels and averaged. Below 1.0 beats a naive last-value forecast, which scores about 0.83 on this data. The reorder classifier predicts whether a user reorders a previously bought product in their next order; at a 9.7% base reorder rate, a PR AUC of 0.41 is roughly four times the no-skill baseline, with ROC AUC 0.83. Segmentation groups shoppers into four personas: loyal champions (14%), big-basket stock-up shoppers (17%), mainstream regulars (36%), and an at-risk lapsing group (33%). Price elasticity is estimated per category with a within-item fixed-effects log-log regression; all own-price elasticities are negative and significant, with food the most price-sensitive (cross-price estimates are exploratory). All models are tracked in MLflow.
 
 ---
 

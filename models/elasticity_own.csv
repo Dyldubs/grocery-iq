@@ -1,0 +1,4 @@
+cat_id,own_elasticity,std_err,t_stat,n_obs
+FOODS,-0.7237,0.0314,-23.05,2257511
+HOBBIES,-0.6198,0.0463,-13.38,766698
+HOUSEHOLD,-0.4647,0.0323,-14.4,1433942

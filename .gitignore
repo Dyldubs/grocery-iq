@@ -31,6 +31,7 @@ mlflow.db
 models/*.joblib
 models/*.pkl
 models/*.pt
+models/*.json
 
 # Jupyter checkpoints
 .ipynb_checkpoints/
